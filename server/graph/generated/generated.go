@@ -42,12 +42,12 @@ type DirectiveRoot struct {
 
 type ComplexityRoot struct {
 	Query struct {
-		Plot2d func(childComplexity int, input model.Expression) int
+		Plot2d func(childComplexity int, expression model.Expression, rangeArg model.XRange) int
 	}
 }
 
 type QueryResolver interface {
-	Plot2d(ctx context.Context, input model.Expression) ([][]*float64, error)
+	Plot2d(ctx context.Context, expression model.Expression, rangeArg model.XRange) ([]*float64, error)
 }
 
 type executableSchema struct {
@@ -75,7 +75,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Plot2d(childComplexity, args["input"].(model.Expression)), true
+		return e.complexity.Query.Plot2d(childComplexity, args["expression"].(model.Expression), args["range"].(model.XRange)), true
 
 	}
 	return 0, false
@@ -131,12 +131,18 @@ var sources = []*ast.Source{
 #
 # https://gqlgen.com/getting-started/
 
+input XRange {
+  Xmin: Float!
+  Xmax: Float!
+  N: Int!
+}
+
 input Expression {
   body: String!
 }
 
 type Query {
-  plot2D(input: Expression!): [[Float]]
+  plot2D(expression: Expression!, range: XRange!): [Float]
 }
 `, BuiltIn: false},
 }
@@ -165,14 +171,23 @@ func (ec *executionContext) field_Query_plot2D_args(ctx context.Context, rawArgs
 	var err error
 	args := map[string]interface{}{}
 	var arg0 model.Expression
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["expression"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("expression"))
 		arg0, err = ec.unmarshalNExpression2githubᚗcomᚋcstevenson98ᚋgraphᚑcalcᚋserverᚋgraphᚋmodelᚐExpression(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["expression"] = arg0
+	var arg1 model.XRange
+	if tmp, ok := rawArgs["range"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("range"))
+		arg1, err = ec.unmarshalNXRange2githubᚗcomᚋcstevenson98ᚋgraphᚑcalcᚋserverᚋgraphᚋmodelᚐXRange(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["range"] = arg1
 	return args, nil
 }
 
@@ -239,7 +254,7 @@ func (ec *executionContext) _Query_plot2D(ctx context.Context, field graphql.Col
 	fc.Args = args
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Plot2d(rctx, args["input"].(model.Expression))
+		return ec.resolvers.Query().Plot2d(rctx, args["expression"].(model.Expression), args["range"].(model.XRange))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -248,9 +263,9 @@ func (ec *executionContext) _Query_plot2D(ctx context.Context, field graphql.Col
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.([][]*float64)
+	res := resTmp.([]*float64)
 	fc.Result = res
-	return ec.marshalOFloat2ᚕᚕᚖfloat64(ctx, field.Selections, res)
+	return ec.marshalOFloat2ᚕᚖfloat64(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query___type(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -1533,6 +1548,45 @@ func (ec *executionContext) unmarshalInputExpression(ctx context.Context, obj in
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputXRange(ctx context.Context, obj interface{}) (model.XRange, error) {
+	var it model.XRange
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	for k, v := range asMap {
+		switch k {
+		case "Xmin":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Xmin"))
+			it.Xmin, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "Xmax":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("Xmax"))
+			it.Xmax, err = ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "N":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("N"))
+			it.N, err = ec.unmarshalNInt2int(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2048,6 +2102,36 @@ func (ec *executionContext) unmarshalNExpression2githubᚗcomᚋcstevenson98ᚋg
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v interface{}) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
+	res, err := graphql.UnmarshalInt(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.SelectionSet, v int) graphql.Marshaler {
+	res := graphql.MarshalInt(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "must not be null")
+		}
+	}
+	return res
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2061,6 +2145,11 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNXRange2githubᚗcomᚋcstevenson98ᚋgraphᚑcalcᚋserverᚋgraphᚋmodelᚐXRange(ctx context.Context, v interface{}) (model.XRange, error) {
+	res, err := ec.unmarshalInputXRange(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -2340,38 +2429,6 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
-}
-
-func (ec *executionContext) unmarshalOFloat2ᚕᚕᚖfloat64(ctx context.Context, v interface{}) ([][]*float64, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var vSlice []interface{}
-	if v != nil {
-		vSlice = graphql.CoerceList(v)
-	}
-	var err error
-	res := make([][]*float64, len(vSlice))
-	for i := range vSlice {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
-		res[i], err = ec.unmarshalOFloat2ᚕᚖfloat64(ctx, vSlice[i])
-		if err != nil {
-			return nil, err
-		}
-	}
-	return res, nil
-}
-
-func (ec *executionContext) marshalOFloat2ᚕᚕᚖfloat64(ctx context.Context, sel ast.SelectionSet, v [][]*float64) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	ret := make(graphql.Array, len(v))
-	for i := range v {
-		ret[i] = ec.marshalOFloat2ᚕᚖfloat64(ctx, sel, v[i])
-	}
-
-	return ret
 }
 
 func (ec *executionContext) unmarshalOFloat2ᚕᚖfloat64(ctx context.Context, v interface{}) ([]*float64, error) {

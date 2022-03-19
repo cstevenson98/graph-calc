@@ -6,20 +6,44 @@ package graph
 import (
 	"context"
 	"fmt"
-	"github.com/cstevenson98/graph-calc/server/pkg/govaluate"
+	"math"
 
 	"github.com/cstevenson98/graph-calc/server/graph/generated"
 	"github.com/cstevenson98/graph-calc/server/graph/model"
+	"github.com/cstevenson98/graph-calc/server/pkg/govaluate"
 )
 
-func (r *queryResolver) Plot2d(ctx context.Context, input model.Expression) ([][]*float64, error) {
-	expression, err := govaluate.NewEvaluableExpression(input.Body)
+func (r *queryResolver) Plot2d(ctx context.Context, expression model.Expression, rangeArg model.XRange) ([]*float64, error) {
+	exp, err := govaluate.NewEvaluableExpression(expression.Body)
 	if err != nil {
 		return nil, fmt.Errorf("invalid expression: %v", err)
 	}
-	_, _ = expression.Evaluate(nil)
-	// result is now set to "true", the bool value.
-	return nil, nil
+
+	parameters := make(map[string]interface{}, 8)
+	var out []*float64
+
+	for j := 0; j < rangeArg.N + 1; j++ {
+		localX := rangeArg.Xmin + (float64)(j)*(rangeArg.Xmax-rangeArg.Xmin)/(float64)(rangeArg.N)
+		parameters["x"] = localX
+
+		result, err := exp.Evaluate(parameters)
+		if err != nil {
+			return nil, err
+		}
+
+		switch i := result.(type) {
+		case float64:
+			localY := i
+			out = append(out, &localX)
+			out = append(out, &localY)
+		default:
+			nan := math.NaN()
+			out = append(out, &localX)
+			out = append(out, &nan)
+		}
+	}
+
+	return out, nil
 }
 
 // Query returns generated.QueryResolver implementation.

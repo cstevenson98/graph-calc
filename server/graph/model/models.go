@@ -5,3 +5,9 @@ package model
 type Expression struct {
 	Body string `json:"body"`
 }
+
+type XRange struct {
+	Xmin float64 `json:"Xmin"`
+	Xmax float64 `json:"Xmax"`
+	N    int     `json:"N"`
+}
