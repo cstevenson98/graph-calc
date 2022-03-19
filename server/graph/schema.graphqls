@@ -1,0 +1,11 @@
+# GraphQL schema example
+#
+# https://gqlgen.com/getting-started/
+
+input Expression {
+  body: String!
+}
+
+type Query {
+  plot2D(input: Expression!): [[Float]]
+}
